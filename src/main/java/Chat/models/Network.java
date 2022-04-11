@@ -3,9 +3,7 @@ package Chat.models;
 import Chat.controllers.ChatController;
 import javafx.application.Platform;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 
 public class Network {
@@ -25,9 +23,6 @@ public class Network {
     private static final String REGERR_CMD_PREFIX = "/regerr"; // + error message
 
     public static final String CHANGE_USERNAME_PREFIX = "/chngname"; // + login + username
-
-
-
 
 
     public static final String DEFAULT_HOST = "localhost";
@@ -68,35 +63,35 @@ public class Network {
     }
 
     public void waitMessage(ChatController chatController) {
-       Thread t = new Thread(() -> {
-           try {
-               while (true) {
-                   String message = in.readUTF();
+        Thread t = new Thread(() -> {
+            try {
+                while (true) {
+                    String message = in.readUTF();
 
-                  if (message.startsWith(CLIENT_MSG_CMD_PREFIX)) {
-                      String[] parts = message.split("\\s+", 3);
-                      String sender = parts[1];
-                      String messageFromSender = parts[2];
+                    if (message.startsWith(CLIENT_MSG_CMD_PREFIX)) {
+                        String[] parts = message.split("\\s+", 3);
+                        String sender = parts[1];
+                        String messageFromSender = parts[2];
 
-                      Platform.runLater(() -> chatController.appendMessage(String.format("%s: %s", sender, messageFromSender)));
-                  } else if (message.startsWith(SERVER_MSG_CMD_PREFIX)) {
-                      String[] parts = message.split("\\s+", 2);
-                      String serverMessage = parts[1];
+                        Platform.runLater(() -> chatController.appendMessage(String.format("%s: %s", sender, messageFromSender)));
+                    } else if (message.startsWith(SERVER_MSG_CMD_PREFIX)) {
+                        String[] parts = message.split("\\s+", 2);
+                        String serverMessage = parts[1];
 
-                      Platform.runLater(() -> chatController.appendServerMessage(serverMessage));
-                  } else if (message.startsWith(GET_CLIENTS_CMD_PREFIX)) {
-                      message = message.substring(message.indexOf('[') + 1, message.indexOf(']'));
-                      String[] users = message.split(", ");
-                      Platform.runLater(() -> chatController.updateUsersList(users));
-                  }
-               }
-           } catch (IOException e) {
-               e.printStackTrace();
-           }
-       });
+                        Platform.runLater(() -> chatController.appendServerMessage(serverMessage));
+                    } else if (message.startsWith(GET_CLIENTS_CMD_PREFIX)) {
+                        message = message.substring(message.indexOf('[') + 1, message.indexOf(']'));
+                        String[] users = message.split(", ");
+                        Platform.runLater(() -> chatController.updateUsersList(users));
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
 
-       t.setDaemon(true);
-       t.start();
+        t.setDaemon(true);
+        t.start();
 
     }
 
@@ -154,4 +149,5 @@ public class Network {
         String newUsername = message.split("\s+")[1];
         sendMessage(String.format("%s %s %s", CHANGE_USERNAME_PREFIX, username, newUsername));
     }
+
 }

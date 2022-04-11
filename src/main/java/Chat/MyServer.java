@@ -105,6 +105,7 @@ public class MyServer {
     }
 
     public synchronized void broadcastClientDisconnected(ClientHandler sender) throws IOException {
+        System.out.println(String.format("пользователь %s отключился", sender.getUsername()));
         for (ClientHandler client : clients) {
             if (client == sender) {
                 continue;

@@ -7,6 +7,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.List;
 
 public class ClientHandler {
@@ -46,6 +47,14 @@ public class ClientHandler {
             try {
                 sign();
                 readMessage();
+            } catch (SocketException ex) {
+                try {
+
+                    myServer.broadcastClientDisconnected(this);
+                    myServer.unSubscribe(this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
                 myServer.unSubscribe(this);
@@ -148,12 +157,12 @@ public class ClientHandler {
                 String privateMessage = parts[2];
 
                 myServer.sendPrivateMessage(this, recipient, privateMessage);
-            } else if(message.startsWith(CHANGE_USERNAME_PREFIX)) {
+            } else if (message.startsWith(CHANGE_USERNAME_PREFIX)) {
                 String[] parts = message.split("\\s+", 3);
                 String username = parts[1];
                 String newUsername = parts[2];
                 myServer.changeUsername(this, newUsername);
-            }else {
+            } else {
                 myServer.broadcastMessage(message, this);
             }
 
@@ -185,6 +194,7 @@ public class ClientHandler {
         String msg = String.format("%s %s", GET_CLIENTS_CMD_PREFIX, clients.toString());
         out.writeUTF(msg);
     }
+
 
     @Override
     public String toString() {

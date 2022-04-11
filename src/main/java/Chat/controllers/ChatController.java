@@ -1,19 +1,21 @@
 package Chat.controllers;
 
-import Chat.StartClient;
-import Chat.handler.ClientHandler;
 import Chat.models.Network;
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 
+import java.io.*;
 import java.text.DateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 public class ChatController {
+
+    @FXML
+    private javafx.scene.control.Button closeButton;
 
     @FXML
     private ListView<String> usersList;
@@ -35,7 +37,6 @@ public class ChatController {
     public void initialize() {
         sendButton.setOnAction(event -> sendMessage());
         inputField.setOnAction(event -> sendMessage());
-
         ContextMenu contextMenu = new ContextMenu();
         MenuItem item1 = new MenuItem(" Сменить ник ");
         contextMenu.getItems().add(item1);
@@ -44,7 +45,7 @@ public class ChatController {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Смена ника");
             dialog.setHeaderText("Ведите новый ник:");
-            dialog.showAndWait().ifPresent(name -> network.sendChangeUsernameMessage(Network.CHANGE_USERNAME_PREFIX+" " + name));
+            dialog.showAndWait().ifPresent(name -> network.sendChangeUsernameMessage(Network.CHANGE_USERNAME_PREFIX + " " + name));
         });
 
         usersList.setCellFactory(lv -> {
@@ -130,6 +131,48 @@ public class ChatController {
         usersList.getItems().clear();
         Collections.addAll(usersList.getItems(), users);
 
+    }
+
+    public void saveLog() {
+        String logFileName = "history_" + network.getUsername() + ".txt";
+        try {
+            File log = new File(logFileName);
+            if (!log.exists()) {
+                log.createNewFile();
+            }
+            PrintWriter fileWriter = new PrintWriter(new FileWriter(log, true));
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+            bufferedWriter.write(chatHistory.getText());
+            bufferedWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void loadLog() {
+        String logFileName = "history_" + network.getUsername() + ".txt";
+        File log = new File(logFileName);
+        List<String> logLines = new ArrayList<>();
+        if (log.exists()) {
+            try {
+                FileInputStream in = new FileInputStream(log);
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    logLines.add(line);
+                }
+                if (logLines.size() > 100) {
+                    for (int i = logLines.size() - 100; i <= (logLines.size() - 1); i++) {
+                        chatHistory.appendText(logLines.get(i) + "\n");
+                    }
+                } else {
+                    logLines.forEach(name -> chatHistory.appendText(name + "\n"));
+                }
+                chatHistory.setScrollTop(Double.MAX_VALUE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 }

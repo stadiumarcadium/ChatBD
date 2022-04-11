@@ -4,14 +4,18 @@ import Chat.controllers.ChatController;
 import Chat.controllers.SignController;
 import Chat.models.Network;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 import java.io.IOException;
+import java.util.EventListener;
 
 public class StartClient extends Application {
 
@@ -70,6 +74,8 @@ public class StartClient extends Application {
         primaryStage.setTitle(network.getUsername());
         network.waitMessage(chatController);
         chatController.setUsernameTitle(network.getUsername());
+        chatController.loadLog();
+        primaryStage.setOnCloseRequest(event -> chatController.saveLog());
     }
 
     public void showErrorAlert(String title, String errorMessage) {
