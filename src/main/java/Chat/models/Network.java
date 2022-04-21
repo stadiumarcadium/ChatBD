@@ -32,6 +32,11 @@ public class Network {
 
     private final String host;
     private final int port;
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     private String username;
 
     public Network(String host, int port) {
@@ -83,6 +88,7 @@ public class Network {
                         message = message.substring(message.indexOf('[') + 1, message.indexOf(']'));
                         String[] users = message.split(", ");
                         Platform.runLater(() -> chatController.updateUsersList(users));
+
                     }
                 }
             } catch (IOException e) {

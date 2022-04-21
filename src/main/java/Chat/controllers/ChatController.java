@@ -45,7 +45,11 @@ public class ChatController {
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Смена ника");
             dialog.setHeaderText("Ведите новый ник:");
-            dialog.showAndWait().ifPresent(name -> network.sendChangeUsernameMessage(Network.CHANGE_USERNAME_PREFIX + " " + name));
+            dialog.showAndWait().ifPresent(name -> {
+                network.sendChangeUsernameMessage(Network.CHANGE_USERNAME_PREFIX + " " + name);
+                network.setUsername(name);
+                setUsernameTitle(name);
+            });
         });
 
         usersList.setCellFactory(lv -> {
@@ -159,7 +163,7 @@ public class ChatController {
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
-                    logLines.add(line);
+                    logLines.add(line + "\n");
                 }
                 if (logLines.size() > 100) {
                     for (int i = logLines.size() - 100; i <= (logLines.size() - 1); i++) {

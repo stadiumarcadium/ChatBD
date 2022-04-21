@@ -2,9 +2,8 @@ package Chat;
 
 import Chat.authentication.AuthenticationService;
 import Chat.authentication.DBAuthenticationService;
-import Chat.controllers.ChatController;
 import Chat.handler.ClientHandler;
-import Chat.models.Network;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -14,6 +13,7 @@ import java.util.List;
 
 public class MyServer {
 
+    Logger server = Logger.getLogger("server");
     private final ServerSocket serverSocket;
     private final AuthenticationService authenticationService;
     private final List<ClientHandler> clients;
@@ -29,6 +29,7 @@ public class MyServer {
         authenticationService.startAuthentication();
         System.out.println("СЕРВЕР ЗАПУЩЕН!");
         System.out.println("----------------");
+        server.info("Сервер запущен.");
 
         try {
             while (true) {
@@ -43,9 +44,10 @@ public class MyServer {
 
     private void waitAndProcessNewClientConnection() throws IOException {
         System.out.println("Ожидание клиента...");
+        server.info("Ожидание клиента...");
         Socket socket = serverSocket.accept();
         System.out.println("Клиент подключился!");
-
+        server.info("Клиент подключился!");
         processClientConnection(socket);
     }
 
@@ -89,6 +91,7 @@ public class MyServer {
     }
 
     public synchronized void sendPrivateMessage(ClientHandler sender, String recipient, String privateMessage) throws IOException {
+        server.info(String.format("%s выслал сообщение пользователю %s", sender, recipient));
         for (ClientHandler client : clients) {
             if (client.getUsername().equals(recipient)) {
                 client.sendMessage(sender.getUsername(), privateMessage);
@@ -97,6 +100,7 @@ public class MyServer {
     }
 
     public synchronized void broadcastClients(ClientHandler sender) throws IOException {
+        server.info(String.format("%s присоединился к чату", sender.getUsername()));
         for (ClientHandler client : clients) {
 
             client.sendServerMessage(String.format("%s присоединился к чату", sender.getUsername()));
@@ -106,6 +110,7 @@ public class MyServer {
 
     public synchronized void broadcastClientDisconnected(ClientHandler sender) throws IOException {
         System.out.println(String.format("пользователь %s отключился", sender.getUsername()));
+        server.info(String.format("%s отключился", sender.getUsername()));
         for (ClientHandler client : clients) {
             if (client == sender) {
                 continue;
@@ -116,10 +121,20 @@ public class MyServer {
         }
     }
 
-    public void changeUsername(ClientHandler clientHandler, String newUsername) {
-        authenticationService.checkLoginByFree(clientHandler.getUsername());
-        String login = authenticationService.getLoginByUsername(clientHandler.getUsername());
-        authenticationService.updateUsername(login, newUsername);
-        unSubscribe(clientHandler);
+    public void changeUsername(ClientHandler clientHandler, String newUsername) throws IOException {
+        String oldName = clientHandler.getUsername();
+        if (authenticationService.checkLoginByFree(oldName)) {
+            String login = authenticationService.getLoginByUsername(oldName);
+            authenticationService.updateUsername(login, newUsername);
+            clientHandler.setUsername(newUsername);
+            for (ClientHandler client : clients) {
+                client.sendServerMessage(String.format("%s поменял ник на %s", oldName, newUsername));
+                server.info(String.format("%s поменял ник на %s", oldName, newUsername));
+                client.sendClientsList(clients);
+            }
+        } else {
+            System.out.println(String.format("Ник %s уже занят", newUsername));
+            server.info(String.format("Ник %s уже занят", newUsername));
+        }
     }
 }

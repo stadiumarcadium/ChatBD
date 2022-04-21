@@ -2,6 +2,7 @@ package Chat.handler;
 
 import Chat.MyServer;
 import Chat.authentication.AuthenticationService;
+import org.apache.log4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -11,6 +12,9 @@ import java.net.SocketException;
 import java.util.List;
 
 public class ClientHandler {
+
+    Logger server = Logger.getLogger("server");
+
     private static final String AUTH_CMD_PREFIX = "/auth"; // + login + password
     private static final String AUTHOK_CMD_PREFIX = "/authok"; // + username
     private static final String AUTHERR_CMD_PREFIX = "/autherr"; // + error message
@@ -31,6 +35,11 @@ public class ClientHandler {
     private Socket clientSocket;
     private DataOutputStream out;
     private DataInputStream in;
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     private String username;
 
     public ClientHandler(MyServer myServer, Socket socket) {
@@ -82,6 +91,7 @@ public class ClientHandler {
             } else {
                 out.writeUTF(AUTHERR_CMD_PREFIX + " Ошибка аутентификации");
                 System.out.println("Неудачная попытка аутентификации");
+                server.info("Неудачная попытка аутентификации");
             }
         }
     }
@@ -101,6 +111,7 @@ public class ClientHandler {
         if (username != null) {
             if (myServer.isUsernameBusy(username)) {
                 out.writeUTF(AUTHERR_CMD_PREFIX + " Логин уже используется");
+                server.warn(username + " Логин уже используется");
                 return false;
             }
 
@@ -111,6 +122,7 @@ public class ClientHandler {
             return true;
         } else {
             out.writeUTF(AUTHERR_CMD_PREFIX + " Логин или пароль не соответствуют действительности");
+            server.warn("Логин или пароль не соответствуют действительности");
             return false;
         }
     }
@@ -119,6 +131,7 @@ public class ClientHandler {
         String[] parts = message.split("\\s+");
         if (parts.length != 4) {
             out.writeUTF(REGERR_CMD_PREFIX + " Ошибка регистрации. Неверный запрос");
+            server.error("Ошибка регистрации. Неверный запрос");
         }
         String login = parts[1];
         String password = parts[2];
@@ -133,6 +146,7 @@ public class ClientHandler {
             return true;
         } else {
             out.writeUTF(REGERR_CMD_PREFIX + " Пользователь с таким логином уже существует");
+            server.warn(String.format("Пользователь с логином %s уже существует", login));
             return false;
         }
     }
@@ -149,6 +163,7 @@ public class ClientHandler {
             System.out.println("message | " + username + ": " + message);
             if (message.startsWith(STOP_SERVER_CMD_PREFIX)) {
                 System.exit(0);
+                server.info("Сервер остнановлен.");
             } else if (message.startsWith(END_CLIENT_CMD_PREFIX)) {
                 return;
             } else if (message.startsWith(PRIVATE_MSG_CMD_PREFIX)) {

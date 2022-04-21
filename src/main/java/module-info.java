@@ -2,6 +2,7 @@ module Chat {
     requires javafx.controls;
     requires javafx.fxml;
     requires java.sql;
+    requires log4j;
 
 
     opens Chat to javafx.fxml;
